@@ -8,25 +8,52 @@ import java.util.Properties;
 
 @Service
 public class EmailService {
-    // Constants for email server connection
+
     private static final String HOST = "outlook.office365.com";
     private static final String USERNAME = "your-email@example.com";
     private static final String PASSWORD = "your-password";
     private static final String FOLDER = "inbox";
     private static final String DOWNLOAD_FOLDER = "your-download-folder/";
 
-    // Method to download attachments and move messages to trash
     public void downloadAndMoveToTrash() throws MessagingException, IOException {
-        // ... (see below)
+        Properties properties = new Properties();
+        properties.put("mail.store.protocol", "imaps");
+
+        Session session = Session.getDefaultInstance(properties, null);
+        Store store = session.getStore();
+        store.connect(HOST, USERNAME, PASSWORD);
+
+        Folder emailFolder = store.getFolder(FOLDER);
+        emailFolder.open(Folder.READ_WRITE);
+
+        Message[] messages = emailFolder.getMessages();
+        for (Message message : messages) {
+            downloadAttachments(message);
+            moveToTrash(message);
+        }
+
+        emailFolder.close(true);
+        store.close();
     }
 
-    // Method to download attachments from an email message
     private void downloadAttachments(Message message) throws MessagingException, IOException {
-        // ... (see below)
+        Multipart multipart = (Multipart) message.getContent();
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+            if (bodyPart instanceof MimeBodyPart) {
+                MimeBodyPart mimeBodyPart = (MimeBodyPart) bodyPart;
+                if (Part.ATTACHMENT.equalsIgnoreCase(mimeBodyPart.getDisposition())) {
+                    String fileName = mimeBodyPart.getFileName();
+                    mimeBodyPart.saveFile(new File(DOWNLOAD_FOLDER + fileName));
+                }
+            }
+        }
     }
 
-    // Method to move a message to the trash folder
-    private void moveToTrash(Message message, Folder sourceFolder, Folder trashFolder) throws MessagingException {
-        // ... (see below)
-    }
+    private void moveToTrash(Message message) throws MessagingException {
+         private void moveToTrash(Message message) throws MessagingException {
+    // Mark the message as deleted
+    message.setFlag(Flags.Flag.DELETED, true);
 }
+}
+
